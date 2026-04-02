@@ -1,0 +1,13 @@
+[Unit]
+Description=AIEmbedd Backend Service
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/opt/aiembedd/backend
+EnvironmentFile=/opt/aiembedd/.env
+ExecStart=/opt/aiembedd/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

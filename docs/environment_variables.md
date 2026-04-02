@@ -1,0 +1,8 @@
+# Environment Variables
+
+- `DATABASE_URL`
+- `BACKEND_SECRET`
+- `OPENAI_API_KEY`
+- `ANTHROPIC_API_KEY`
+- `DEEPSEEK_API_KEY`
+- `DEBUG`
