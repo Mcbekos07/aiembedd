@@ -1,0 +1,99 @@
+.main-layout {
+  min-height: 100vh;
+}
+
+.start-layout,
+.ide-shell {
+  padding: 16px;
+}
+
+.start-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.grid-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.ide-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr 320px;
+  gap: 10px;
+}
+
+.ide-v2-shell {
+  display: grid;
+  gap: 10px;
+}
+
+.ide-v2-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.ide-v2-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.8fr) minmax(420px, 1.4fr) minmax(300px, 1fr);
+  grid-template-areas:
+    'project editor agent'
+    'context editor agent'
+    'logs logs logs';
+  gap: 10px;
+}
+
+.ide-zone {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.ide-zone-project { grid-area: project; }
+.ide-zone-editor { grid-area: editor; }
+.ide-zone-agent { grid-area: agent; }
+.ide-zone-context { grid-area: context; }
+.ide-zone-logs { grid-area: logs; }
+
+.ide-logs {
+  margin-top: 10px;
+}
+
+.editor-placeholder {
+  width: 100%;
+  min-height: 320px;
+}
+
+@media (max-width: 1400px) {
+  .ide-v2-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'project editor'
+      'context agent'
+      'logs logs';
+  }
+}
+
+@media (max-width: 980px) {
+  .ide-v2-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'project'
+      'editor'
+      'agent'
+      'context'
+      'logs';
+  }
+}
+
+
+.inline-ai-panel {
+  margin-top: 10px;
+}
+
+.inline-ai-response {
+  margin-top: 10px;
+}
