@@ -1,6 +1,6 @@
 <template>
   <div class="panel row between">
-    <h3>Log toolbar</h3>
+    <h3>Панель логов</h3>
     <small>Оригинальные логи отображаются без модификации</small>
   </div>
 </template>

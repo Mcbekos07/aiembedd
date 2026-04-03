@@ -6,16 +6,18 @@
     </div>
 
     <div class="grid-actions">
-      <Button @click="saveFile">Сохранить</Button>
-      <Button @click="buildProject">Собрать</Button>
-      <Button @click="flashProject">Прошить</Button>
-      <Button @click="explainError">Объяснить ошибку</Button>
-      <Button @click="fixWithAi">Исправить через ИИ</Button>
+      <Button @click="saveFile" :disabled="busy">Сохранить</Button>
+      <Button @click="buildProject" :disabled="busy">Собрать</Button>
+      <Button @click="flashProject" :disabled="busy">Прошить</Button>
+      <Button @click="explainError" :disabled="busy">Объяснить ошибку</Button>
+      <Button @click="fixWithAi" :disabled="busy">Исправить через ИИ</Button>
     </div>
+    <p v-if="busy" class="muted">{{ busyText }}</p>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import Button from '../common/Button.vue'
 import { useAiStore } from '../../store/aiStore'
 import { useBuildStore } from '../../store/buildStore'
@@ -29,6 +31,12 @@ const props = withDefaults(defineProps<{ projectId: number; programmer?: string;
 const projectStore = useProjectStore()
 const buildStore = useBuildStore()
 const aiStore = useAiStore()
+const busy = computed(() => !!buildStore.runningAction || aiStore.processingTask)
+const busyText = computed(() => {
+  if (buildStore.runningAction) return 'Выполняется ручная операция сборки/прошивки…'
+  if (aiStore.processingTask) return 'AI выполняет задачу…'
+  return ''
+})
 
 async function saveFile() {
   if (props.projectId <= 0) return

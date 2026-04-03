@@ -6,6 +6,8 @@
     </div>
 
     <ul class="list">
+      <li v-if="store.loadingPatches" class="muted">Загрузка патчей…</li>
+      <li v-else-if="!store.patches.length" class="muted">Патчи пока не предложены.</li>
       <li v-for="patch in store.patches" :key="patch.id">
         <button class="btn" @click="store.selectedPatchId = patch.id">
           #{{ patch.id }} {{ readableStatus(patch.status) }} — {{ patch.summary || patch.reason }}
@@ -20,6 +22,8 @@
       <p><strong>Связь с агентом:</strong> {{ relatedAgentStep }}</p>
       <p><strong>Риск:</strong> {{ selectedPatch.dangerous ? 'рискованное изменение (нужно явное подтверждение)' : 'обычный' }}</p>
       <p><strong>Последнее событие:</strong> {{ lastRealtimeEvent }}</p>
+      <p><strong>Статистика diff:</strong> +{{ diffAdded }} / -{{ diffRemoved }}</p>
+      <p v-if="store.lastError" class="error">{{ store.lastError }}</p>
 
       <label v-if="selectedPatch.dangerous" class="row">
         <input v-model="dangerousConfirmed" type="checkbox" />
@@ -130,6 +134,14 @@ const diffSections = computed(() => {
 })
 
 const latestCheckpointId = computed(() => gitStore.checkpoints[0]?.id || 0)
+const diffAdded = computed(() => {
+  if (!selectedPatch.value) return 0
+  return selectedPatch.value.diff_preview.split('\n').filter((line) => line.startsWith('+') && !line.startsWith('+++')).length
+})
+const diffRemoved = computed(() => {
+  if (!selectedPatch.value) return 0
+  return selectedPatch.value.diff_preview.split('\n').filter((line) => line.startsWith('-') && !line.startsWith('---')).length
+})
 const lastRealtimeEvent = computed(() => {
   const ev = realtimeStore.events[0]
   if (!ev) return 'нет'

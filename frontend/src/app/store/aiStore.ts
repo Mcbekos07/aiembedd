@@ -28,16 +28,38 @@ export const useAiStore = defineStore('ai', {
     contextReport: null as ContextPackReport | null,
     contextPromptPreview: '',
     contextLastUpdatedAt: '',
+    loadingTasks: false,
+    loadingPatches: false,
+    loadingContext: false,
+    processingTask: false,
+    lastError: '',
+    lastRunTaskType: '',
+    lastRunInputText: '',
   }),
   actions: {
-    async loadChat(projectId: number) { this.messages = (await aiApi.listChat(projectId)).items },
+    async loadChat(projectId: number) {
+      this.lastError = ''
+      try {
+        this.messages = (await aiApi.listChat(projectId)).items
+      } catch (error) {
+        this.lastError = `Не удалось загрузить чат: ${String(error)}`
+      }
+    },
     async send(projectId: number, text: string) {
       await aiApi.sendChat(projectId, text)
       await this.loadChat(projectId)
     },
     async loadTasks(projectId: number) {
-      this.tasks = (await aiApi.listTasks(projectId)).items
-      if (!this.selectedTaskId && this.tasks.length > 0) this.selectedTaskId = this.tasks[0].id
+      this.loadingTasks = true
+      this.lastError = ''
+      try {
+        this.tasks = (await aiApi.listTasks(projectId)).items
+        if (!this.selectedTaskId && this.tasks.length > 0) this.selectedTaskId = this.tasks[0].id
+      } catch (error) {
+        this.lastError = `Не удалось загрузить задачи агента: ${String(error)}`
+      } finally {
+        this.loadingTasks = false
+      }
     },
     async selectTask(projectId: number, taskId: string) {
       this.selectedTaskId = taskId
@@ -56,15 +78,23 @@ export const useAiStore = defineStore('ai', {
       projectId: number,
       payload: { mode?: string; taskText?: string; openedFilePath?: string; openedFileContent?: string } = {},
     ) {
-      const data = await contextApi.pack(projectId, {
-        mode: payload.mode || 'quick_diagnosis',
-        task_text: payload.taskText || this.tasks[0]?.input_text || '',
-        opened_file_path: payload.openedFilePath,
-        opened_file_content: payload.openedFileContent,
-      })
-      this.contextReport = data.items.report
-      this.contextPromptPreview = data.items.final_context_payload.prompt_text
-      this.contextLastUpdatedAt = new Date().toISOString()
+      this.loadingContext = true
+      this.lastError = ''
+      try {
+        const data = await contextApi.pack(projectId, {
+          mode: payload.mode || 'quick_diagnosis',
+          task_text: payload.taskText || this.tasks[0]?.input_text || '',
+          opened_file_path: payload.openedFilePath,
+          opened_file_content: payload.openedFileContent,
+        })
+        this.contextReport = data.items.report
+        this.contextPromptPreview = data.items.final_context_payload.prompt_text
+        this.contextLastUpdatedAt = new Date().toISOString()
+      } catch (error) {
+        this.lastError = `Не удалось собрать контекст: ${String(error)}`
+      } finally {
+        this.loadingContext = false
+      }
     },
     startAgentRealtime(projectId: number, intervalMs = 3000) {
       this.stopAgentRealtime()
@@ -95,14 +125,24 @@ export const useAiStore = defineStore('ai', {
     },
     async runTask(projectId: number, taskType: string, inputText: string) {
       this.clearAgentStopRequest()
+      this.processingTask = true
+      this.lastError = ''
+      this.lastRunTaskType = taskType
+      this.lastRunInputText = inputText
       useRealtimeStore().ingestLocalEvent('agent_started', { task_type: taskType })
-      await aiApi.runTask(projectId, taskType, inputText)
-      await this.loadTasks(projectId)
-      await this.loadMemory(projectId)
-      if (this.tasks.length > 0) {
-        await this.selectTask(projectId, this.tasks[0].id)
+      try {
+        await aiApi.runTask(projectId, taskType, inputText)
+        await this.loadTasks(projectId)
+        await this.loadMemory(projectId)
+        if (this.tasks.length > 0) {
+          await this.selectTask(projectId, this.tasks[0].id)
+        }
+        useRealtimeStore().ingestLocalEvent('task_finished', { task_type: taskType })
+      } catch (error) {
+        this.lastError = `Не удалось запустить задачу агента: ${String(error)}`
+      } finally {
+        this.processingTask = false
       }
-      useRealtimeStore().ingestLocalEvent('task_finished', { task_type: taskType })
     },
     async runDiagnosis(projectId: number, openedFilePath?: string, openedFileContent?: string) {
       this.clearAgentStopRequest()
@@ -133,10 +173,18 @@ export const useAiStore = defineStore('ai', {
       this.actionResult = (await aiApi.runAction(action, payload)).result
     },
     async loadPatches(projectId: number) {
+      this.loadingPatches = true
+      this.lastError = ''
       const before = this.patches.length
-      this.patches = (await aiApi.listPatches(projectId)).items
-      if (this.patches.length > before) useRealtimeStore().ingestLocalEvent('patch_ready', { count: this.patches.length })
-      if (this.patches.length > 0) this.selectedPatchId = this.patches[0].id
+      try {
+        this.patches = (await aiApi.listPatches(projectId)).items
+        if (this.patches.length > before) useRealtimeStore().ingestLocalEvent('patch_ready', { count: this.patches.length })
+        if (this.patches.length > 0) this.selectedPatchId = this.patches[0].id
+      } catch (error) {
+        this.lastError = `Не удалось загрузить патчи: ${String(error)}`
+      } finally {
+        this.loadingPatches = false
+      }
     },
     async proposePatch(projectId: number, reason: string, summary: string, dangerous: boolean, changes: Array<{ path: string; new_content: string }>) {
       await aiApi.proposePatch({ project_id: projectId, reason, summary, dangerous, changes })
@@ -156,6 +204,10 @@ export const useAiStore = defineStore('ai', {
     async rollbackPatch(projectId: number, patchId: number) {
       await aiApi.rollbackPatch(patchId)
       await this.loadPatches(projectId)
+    },
+    async retryLastTask(projectId: number) {
+      if (!this.lastRunTaskType || !this.lastRunInputText) return
+      await this.runTask(projectId, this.lastRunTaskType, this.lastRunInputText)
     },
   },
 })

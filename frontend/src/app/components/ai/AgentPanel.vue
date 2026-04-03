@@ -12,13 +12,16 @@
     <p><strong>Нужно подтверждение:</strong> {{ needsConfirmation ? 'да' : 'нет' }}</p>
     <p><strong>Контекст:</strong> {{ contextStatus }}</p>
     <p><strong>Realtime:</strong> {{ realtimeStatus }}</p>
+    <p v-if="store.lastError" class="error">{{ store.lastError }}</p>
 
     <div class="row">
-      <Button @click="refresh">Обновить статус</Button>
+      <Button @click="refresh" :disabled="store.loadingTasks">Обновить статус</Button>
       <Button v-if="!store.agentRealtimeEnabled" @click="startRealtime">Включить автообновление</Button>
       <Button v-else @click="stopRealtime">Отключить автообновление</Button>
-      <Button @click="requestStop">Остановить агента</Button>
-      <Button @click="refreshContext">Обновить контекст</Button>
+      <Button @click="requestStop" :disabled="store.agentStopRequested">Остановить агента</Button>
+      <Button @click="clearStop" :disabled="!store.agentStopRequested">Снять stop-запрос</Button>
+      <Button @click="retryLast" :disabled="!canRetry || store.processingTask">Повторить последнюю задачу</Button>
+      <Button @click="refreshContext" :disabled="store.loadingContext">Обновить контекст</Button>
     </div>
 
     <details>
@@ -28,6 +31,7 @@
       <p><strong>Последняя синхронизация:</strong> {{ store.agentLastSyncAt || 'ещё не было' }}</p>
     </details>
 
+    <p v-if="store.processingTask" class="muted">Агент выполняет задачу…</p>
     <p v-if="store.actionResult" class="muted">{{ store.actionResult }}</p>
   </section>
 </template>
@@ -101,6 +105,7 @@ const needsConfirmation = computed(() => {
   if (!lastAction.value) return false
   return String(lastAction.value.requires_confirmation || '').toLowerCase() === 'yes'
 })
+const canRetry = computed(() => Boolean(store.lastRunTaskType && store.lastRunInputText))
 
 function actionToStep(action: string) {
   if (action.includes('diagnos')) return 'диагностирует'
@@ -139,6 +144,12 @@ function stopRealtime() {
 
 function requestStop() {
   store.requestAgentStop(props.projectId)
+}
+function clearStop() {
+  store.clearAgentStopRequest()
+}
+async function retryLast() {
+  await store.retryLastTask(props.projectId)
 }
 
 async function refreshContext() {

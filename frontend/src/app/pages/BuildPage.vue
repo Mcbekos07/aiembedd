@@ -1,6 +1,7 @@
 <template>
   <section class="panel">
-    <h2>Build & Flash</h2>
+    <h2>Сборка и прошивка</h2>
+    <p class="muted">Ручные действия по сборке/прошивке доступны параллельно с агентными сценариями.</p>
     <BuildProfileSelector />
     <ProgrammerSelector v-model:programmer="programmer" />
     <PortSelector v-model:port="port" />
@@ -16,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import ArtifactList from '../components/build/ArtifactList.vue'
 import BuildControlPanel from '../components/build/BuildControlPanel.vue'
@@ -30,17 +31,24 @@ import ErrorSummaryPanel from '../components/logs/ErrorSummaryPanel.vue'
 import LogConsole from '../components/logs/LogConsole.vue'
 import LogToolbar from '../components/logs/LogToolbar.vue'
 import { useBuildStore } from '../store/buildStore'
+import { useRealtimeStore } from '../store/realtimeStore'
 
 const route = useRoute()
 const projectId = computed(() => Number(route.params.projectId || 0))
 const programmer = ref('stlink')
 const port = ref('/dev/ttyUSB0')
 const buildStore = useBuildStore()
+const realtimeStore = useRealtimeStore()
 
 watch(projectId, (id) => {
   if (id > 0) {
     void buildStore.fetchHistory(id)
     void buildStore.refreshRuntime(id)
+    realtimeStore.connect(id)
   }
 }, { immediate: true })
+
+onBeforeUnmount(() => {
+  realtimeStore.disconnect()
+})
 </script>
