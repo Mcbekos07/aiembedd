@@ -57,16 +57,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Button from '../common/Button.vue'
 import { useAiStore } from '../../store/aiStore'
 import { useProjectStore } from '../../store/projectStore'
+import { useRealtimeStore } from '../../store/realtimeStore'
 
 const route = useRoute()
 const projectId = computed(() => Number(route.params.projectId || 0))
 const store = useAiStore()
 const projectStore = useProjectStore()
+const realtimeStore = useRealtimeStore()
 const mode = ref<'quick_diagnosis' | 'deep_build_fix' | 'runtime_analysis'>('quick_diagnosis')
 
 const report = computed(() => store.contextReport)
@@ -82,4 +84,11 @@ async function refresh() {
     openedFileContent: projectStore.openedFileContent,
   })
 }
+
+watch(() => realtimeStore.events[0]?.id, async () => {
+  const eventType = realtimeStore.events[0]?.type
+  if (!eventType) return
+  if (!['agent_step', 'task_finished', 'patch_ready', 'patch_applied', 'build_failed', 'build_succeeded'].includes(eventType)) return
+  await refresh()
+})
 </script>

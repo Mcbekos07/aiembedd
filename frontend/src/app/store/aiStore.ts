@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { aiApi, type DiagnosisResult, type PatchItem, type MemoryItem } from '../services/aiApi'
 import { contextApi, type ContextPackReport } from '../services/contextApi'
+import { useRealtimeStore } from './realtimeStore'
 
 export const useAiStore = defineStore('ai', {
   state: () => ({
@@ -94,15 +95,18 @@ export const useAiStore = defineStore('ai', {
     },
     async runTask(projectId: number, taskType: string, inputText: string) {
       this.clearAgentStopRequest()
+      useRealtimeStore().ingestLocalEvent('agent_started', { task_type: taskType })
       await aiApi.runTask(projectId, taskType, inputText)
       await this.loadTasks(projectId)
       await this.loadMemory(projectId)
       if (this.tasks.length > 0) {
         await this.selectTask(projectId, this.tasks[0].id)
       }
+      useRealtimeStore().ingestLocalEvent('task_finished', { task_type: taskType })
     },
     async runDiagnosis(projectId: number, openedFilePath?: string, openedFileContent?: string) {
       this.clearAgentStopRequest()
+      useRealtimeStore().ingestLocalEvent('agent_step', { message: 'Агент выполняет диагностику' })
       this.diagnosis = await aiApi.diagnose(projectId, openedFilePath, openedFileContent)
       await this.loadMemory(projectId)
     },
@@ -129,7 +133,9 @@ export const useAiStore = defineStore('ai', {
       this.actionResult = (await aiApi.runAction(action, payload)).result
     },
     async loadPatches(projectId: number) {
+      const before = this.patches.length
       this.patches = (await aiApi.listPatches(projectId)).items
+      if (this.patches.length > before) useRealtimeStore().ingestLocalEvent('patch_ready', { count: this.patches.length })
       if (this.patches.length > 0) this.selectedPatchId = this.patches[0].id
     },
     async proposePatch(projectId: number, reason: string, summary: string, dangerous: boolean, changes: Array<{ path: string; new_content: string }>) {
@@ -139,6 +145,7 @@ export const useAiStore = defineStore('ai', {
     },
     async applyPatch(projectId: number, patchId: number, confirmed: boolean) {
       await aiApi.applyPatch(patchId, confirmed)
+      useRealtimeStore().ingestLocalEvent('patch_applied', { patch_id: patchId })
       await this.loadPatches(projectId)
       await this.loadMemory(projectId)
     },

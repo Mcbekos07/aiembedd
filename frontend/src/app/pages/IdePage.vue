@@ -56,7 +56,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AgentPanel from '../components/ai/AgentPanel.vue'
 import AiChatPanel from '../components/ai/AiChatPanel.vue'
@@ -78,6 +78,7 @@ import ProjectIntelligencePanel from '../components/project/ProjectIntelligenceP
 import { useAiStore } from '../store/aiStore'
 import { useBuildStore } from '../store/buildStore'
 import { useProjectStore } from '../store/projectStore'
+import { useRealtimeStore } from '../store/realtimeStore'
 
 const route = useRoute()
 const projectId = computed(() => Number(route.params.projectId || 0))
@@ -86,6 +87,7 @@ const port = ref('/dev/ttyUSB0')
 const projectStore = useProjectStore()
 const aiStore = useAiStore()
 const buildStore = useBuildStore()
+const realtimeStore = useRealtimeStore()
 
 const manualStatus = computed(() => (projectStore.openedFilePath ? `Ручное редактирование: ${projectStore.openedFilePath}` : 'Ручное редактирование: файл не открыт'))
 const agentStatus = computed(() => {
@@ -108,6 +110,11 @@ watch(projectId, (id) => {
     void buildStore.fetchHistory(id)
     void aiStore.loadTasks(id)
     void aiStore.loadPatches(id)
+    realtimeStore.connect(id)
   }
 }, { immediate: true })
+
+onBeforeUnmount(() => {
+  realtimeStore.disconnect()
+})
 </script>

@@ -11,6 +11,7 @@
     <p><strong>Причина остановки:</strong> {{ stopReason }}</p>
     <p><strong>Нужно подтверждение:</strong> {{ needsConfirmation ? 'да' : 'нет' }}</p>
     <p><strong>Контекст:</strong> {{ contextStatus }}</p>
+    <p><strong>Realtime:</strong> {{ realtimeStatus }}</p>
 
     <div class="row">
       <Button @click="refresh">Обновить статус</Button>
@@ -37,10 +38,12 @@ import Button from '../common/Button.vue'
 import StatusBadge from '../common/StatusBadge.vue'
 import { useAiStore } from '../../store/aiStore'
 import { useProjectStore } from '../../store/projectStore'
+import { useRealtimeStore } from '../../store/realtimeStore'
 
 const props = defineProps<{ projectId: number }>()
 const store = useAiStore()
 const projectStore = useProjectStore()
+const realtimeStore = useRealtimeStore()
 
 const currentTask = computed(() => store.tasks[0] ?? null)
 const currentActions = computed(() => {
@@ -108,6 +111,13 @@ function actionToStep(action: string) {
   if (action.includes('confirm')) return 'ждёт подтверждения'
   return action || 'анализирует'
 }
+
+const realtimeStatus = computed(() => {
+  realtimeStore.markStaleIfNeeded()
+  const channels = Object.entries(realtimeStore.channelState).map(([k, v]) => `${k}:${v}`).join(', ')
+  const stale = realtimeStore.staleUi ? ' | возможно stale UI' : ''
+  return `${channels}${stale}`
+})
 
 const contextStatus = computed(() => {
   const report = store.contextReport

@@ -26,19 +26,23 @@ import AiMemoryPanel from '../components/ai/AiMemoryPanel.vue'
 import AiTaskHistory from '../components/ai/AiTaskHistory.vue'
 import AiTaskPanel from '../components/ai/AiTaskPanel.vue'
 import { useAiStore } from '../store/aiStore'
+import { useRealtimeStore } from '../store/realtimeStore'
 
 const route = useRoute()
 const projectId = computed(() => Number(route.params.projectId || 0))
 const store = useAiStore()
+const realtimeStore = useRealtimeStore()
 
 watch(projectId, (id) => {
   if (!id) return
   void store.loadChat(id)
   void store.refreshAgent(id)
   void store.loadMemory(id)
+  realtimeStore.connect(id)
 }, { immediate: true })
 
 onBeforeUnmount(() => {
   store.stopAgentRealtime()
+  realtimeStore.disconnect()
 })
 </script>

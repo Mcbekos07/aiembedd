@@ -19,6 +19,7 @@
       <p><strong>Файлы к изменению:</strong> {{ selectedPatch.files.join(', ') || '—' }}</p>
       <p><strong>Связь с агентом:</strong> {{ relatedAgentStep }}</p>
       <p><strong>Риск:</strong> {{ selectedPatch.dangerous ? 'рискованное изменение (нужно явное подтверждение)' : 'обычный' }}</p>
+      <p><strong>Последнее событие:</strong> {{ lastRealtimeEvent }}</p>
 
       <label v-if="selectedPatch.dangerous" class="row">
         <input v-model="dangerousConfirmed" type="checkbox" />
@@ -52,11 +53,13 @@ import { computed, ref, watch } from 'vue'
 import Button from '../common/Button.vue'
 import { useAiStore } from '../../store/aiStore'
 import { useGitStore } from '../../store/gitStore'
+import { useRealtimeStore } from '../../store/realtimeStore'
 
 const props = defineProps<{ projectId: number }>()
 const store = useAiStore()
 const gitStore = useGitStore()
 const dangerousConfirmed = ref(false)
+const realtimeStore = useRealtimeStore()
 
 const selectedPatch = computed(() => store.patches.find((p) => p.id === store.selectedPatchId) || null)
 
@@ -127,6 +130,11 @@ const diffSections = computed(() => {
 })
 
 const latestCheckpointId = computed(() => gitStore.checkpoints[0]?.id || 0)
+const lastRealtimeEvent = computed(() => {
+  const ev = realtimeStore.events[0]
+  if (!ev) return 'нет'
+  return `${ev.type} @ ${ev.at}`
+})
 
 watch(() => props.projectId, (id) => {
   dangerousConfirmed.value = false
