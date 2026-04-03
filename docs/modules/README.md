@@ -1,7 +1,17 @@
 # Modules
 
-Карта модулей кодовой базы:
-- Backend модули: `backend/app/services/*`, `backend/app/api/*`, `backend/app/db/*`.
-- Frontend модули: `frontend/src/app/components/*`, `frontend/src/app/store/*`, `frontend/src/app/services/*`.
+Карта модулей на основе текущего кода.
 
-Детализация по каждому модулю: **TODO** (добавлять по мере стабилизации контрактов).
+## Backend
+- [project.md](./project.md)
+- [build.md](./build.md)
+- [logs.md](./logs.md)
+- [git.md](./git.md)
+- [devices.md](./devices.md)
+- [ai.md](./ai.md)
+
+## Frontend
+- [ide.md](./ide.md)
+- [agent_panel.md](./agent_panel.md)
+- [logs_ui.md](./logs_ui.md)
+- [context_ui.md](./context_ui.md)
