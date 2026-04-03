@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { aiApi, type DiagnosisResult, type PatchItem, type MemoryItem } from '../services/aiApi'
+import { contextApi, type ContextPackReport } from '../services/contextApi'
 
 export const useAiStore = defineStore('ai', {
   state: () => ({
@@ -23,6 +24,9 @@ export const useAiStore = defineStore('ai', {
     agentLastSyncAt: '',
     agentEventStreamState: 'disconnected' as 'disconnected' | 'connecting' | 'connected',
     agentPollHandle: 0,
+    contextReport: null as ContextPackReport | null,
+    contextPromptPreview: '',
+    contextLastUpdatedAt: '',
   }),
   actions: {
     async loadChat(projectId: number) { this.messages = (await aiApi.listChat(projectId)).items },
@@ -46,6 +50,20 @@ export const useAiStore = defineStore('ai', {
       }
       await this.loadPatches(projectId)
       this.agentLastSyncAt = new Date().toISOString()
+    },
+    async loadContextTransparency(
+      projectId: number,
+      payload: { mode?: string; taskText?: string; openedFilePath?: string; openedFileContent?: string } = {},
+    ) {
+      const data = await contextApi.pack(projectId, {
+        mode: payload.mode || 'quick_diagnosis',
+        task_text: payload.taskText || this.tasks[0]?.input_text || '',
+        opened_file_path: payload.openedFilePath,
+        opened_file_content: payload.openedFileContent,
+      })
+      this.contextReport = data.items.report
+      this.contextPromptPreview = data.items.final_context_payload.prompt_text
+      this.contextLastUpdatedAt = new Date().toISOString()
     },
     startAgentRealtime(projectId: number, intervalMs = 3000) {
       this.stopAgentRealtime()

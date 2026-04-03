@@ -10,12 +10,14 @@
     <p><strong>Результат шага:</strong> {{ stepResult }}</p>
     <p><strong>Причина остановки:</strong> {{ stopReason }}</p>
     <p><strong>Нужно подтверждение:</strong> {{ needsConfirmation ? 'да' : 'нет' }}</p>
+    <p><strong>Контекст:</strong> {{ contextStatus }}</p>
 
     <div class="row">
       <Button @click="refresh">Обновить статус</Button>
       <Button v-if="!store.agentRealtimeEnabled" @click="startRealtime">Включить автообновление</Button>
       <Button v-else @click="stopRealtime">Отключить автообновление</Button>
       <Button @click="requestStop">Остановить агента</Button>
+      <Button @click="refreshContext">Обновить контекст</Button>
     </div>
 
     <details>
@@ -34,9 +36,11 @@ import { computed } from 'vue'
 import Button from '../common/Button.vue'
 import StatusBadge from '../common/StatusBadge.vue'
 import { useAiStore } from '../../store/aiStore'
+import { useProjectStore } from '../../store/projectStore'
 
 const props = defineProps<{ projectId: number }>()
 const store = useAiStore()
+const projectStore = useProjectStore()
 
 const currentTask = computed(() => store.tasks[0] ?? null)
 const currentActions = computed(() => {
@@ -105,6 +109,12 @@ function actionToStep(action: string) {
   return action || 'анализирует'
 }
 
+const contextStatus = computed(() => {
+  const report = store.contextReport
+  if (!report) return 'не загружен'
+  return `файлы=${report.selected_files.length}, логи=${report.selected_logs.length}, размер=${report.final_size_chars}`
+})
+
 async function refresh() {
   await store.refreshAgent(props.projectId)
 }
@@ -119,5 +129,13 @@ function stopRealtime() {
 
 function requestStop() {
   store.requestAgentStop(props.projectId)
+}
+
+async function refreshContext() {
+  await store.loadContextTransparency(props.projectId, {
+    mode: 'quick_diagnosis',
+    openedFilePath: projectStore.openedFilePath,
+    openedFileContent: projectStore.openedFileContent,
+  })
 }
 </script>

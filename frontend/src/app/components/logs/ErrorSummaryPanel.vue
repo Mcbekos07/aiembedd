@@ -18,6 +18,11 @@
       </li>
     </ul>
 
+    <h4>Логи, выбранные агентом в контекст</h4>
+    <ul class="list">
+      <li v-for="item in aiStore.contextReport?.selected_logs || []" :key="item">{{ item }}</li>
+    </ul>
+
     <h4>Повторяющиеся warning</h4>
     <ul class="list">
       <li v-for="line in store.repeatedWarnings" :key="line">{{ line }}</li>
@@ -31,6 +36,8 @@
 </template>
 
 <script setup lang="ts">
+import { useAiStore } from '../../store/aiStore'
 import { useBuildStore } from '../../store/buildStore'
 const store = useBuildStore()
+const aiStore = useAiStore()
 </script>

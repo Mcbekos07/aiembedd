@@ -4,6 +4,7 @@
     <AgentPanel :project-id="projectId" />
     <AiChatPanel :project-id="projectId" />
     <AiDiagnosisPanel :project-id="projectId" />
+    <ContextTransparencyPanel />
     <AiActionReview :project-id="projectId" />
     <AiDiffPreview :project-id="projectId" />
     <AiTaskPanel :project-id="projectId" />
@@ -17,6 +18,7 @@ import { computed, onBeforeUnmount, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AgentPanel from '../components/ai/AgentPanel.vue'
 import AiActionReview from '../components/ai/AiActionReview.vue'
+import ContextTransparencyPanel from '../components/ai/ContextTransparencyPanel.vue'
 import AiChatPanel from '../components/ai/AiChatPanel.vue'
 import AiDiagnosisPanel from '../components/ai/AiDiagnosisPanel.vue'
 import AiDiffPreview from '../components/ai/AiDiffPreview.vue'

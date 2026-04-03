@@ -26,6 +26,7 @@
 
       <p><strong>Файл:</strong> {{ store.openedFilePath || 'не открыт' }}</p>
       <p><strong>Выделение:</strong> {{ selectionInfo }}</p>
+      <p><strong>Контекст агента:</strong> {{ contextQuickSummary }}</p>
 
       <div class="grid-actions">
         <Button @click="runInlineAction('explain_selection')" :disabled="!canRunWithSelection">Объяснить выделение</Button>
@@ -86,6 +87,11 @@ const selectionInfo = computed(() => {
 const canRunWithSelection = computed(() => !!selectedText.value && !!store.openedFilePath && projectId.value > 0)
 const hasErrorContext = computed(() => !!buildStore.rootCause || !!buildStore.errorSummary)
 const hasLogContext = computed(() => !!buildStore.importantSummary || !!buildStore.rawLog)
+const contextQuickSummary = computed(() => {
+  const report = aiStore.contextReport
+  if (!report) return 'ещё не загружен'
+  return `файлы=${report.selected_files.length}, логи=${report.selected_logs.length}, память(active/warm)=${report.selected_memory_counts.active}/${report.selected_memory_counts.warm}`
+})
 
 function captureSelection() {
   const editor = editorRef.value
@@ -120,6 +126,12 @@ async function runInlineAction(action: string) {
   if (projectId.value <= 0) return
   const prompt = buildPrompt(action)
   await aiStore.send(projectId.value, prompt)
+  await aiStore.loadContextTransparency(projectId.value, {
+    mode: 'quick_diagnosis',
+    taskText: `inline:${action}`,
+    openedFilePath: store.openedFilePath,
+    openedFileContent: store.openedFileContent,
+  })
   const assistantMessage = [...aiStore.messages].reverse().find((item) => item.role === 'assistant')
   inlineResponse.value = assistantMessage?.content || 'AI не вернул ответ'
 }

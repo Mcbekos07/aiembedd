@@ -39,6 +39,7 @@
         <ProjectIntelligencePanel />
         <GitStatusPanel :project-id="projectId" />
         <BuildControlPanel :project-id="projectId" :programmer="programmer" :port="port" />
+        <ContextTransparencyPanel />
         <ErrorSummaryPanel />
       </aside>
 
@@ -63,6 +64,7 @@ import AiDiffPreview from '../components/ai/AiDiffPreview.vue'
 import AiTaskHistory from '../components/ai/AiTaskHistory.vue'
 import AiTaskPanel from '../components/ai/AiTaskPanel.vue'
 import BuildControlPanel from '../components/build/BuildControlPanel.vue'
+import ContextTransparencyPanel from '../components/ai/ContextTransparencyPanel.vue'
 import StatusBadge from '../components/common/StatusBadge.vue'
 import GitStatusPanel from '../components/git/GitStatusPanel.vue'
 import CodeEditor from '../components/ide/CodeEditor.vue'

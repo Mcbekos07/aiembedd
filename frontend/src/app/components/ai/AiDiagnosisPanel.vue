@@ -37,5 +37,11 @@ const openedFileContent = computed(() => projectStore.openedFileContent)
 
 async function runDiagnosis() {
   await store.runDiagnosis(props.projectId, openedFilePath.value, openedFileContent.value)
+  await store.loadContextTransparency(props.projectId, {
+    mode: 'quick_diagnosis',
+    taskText: 'Диагностика ошибки',
+    openedFilePath: openedFilePath.value,
+    openedFileContent: openedFileContent.value,
+  })
 }
 </script>
