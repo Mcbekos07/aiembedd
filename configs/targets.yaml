@@ -1,0 +1,9 @@
+targets:
+  - STM32
+  - AVR
+  - ESP32
+  - RP2040
+  - MCS-51
+  - MicroPython
+  - Verilog
+  - custom
